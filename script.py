@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 from PyPDF2 import PdfReader, PdfWriter
