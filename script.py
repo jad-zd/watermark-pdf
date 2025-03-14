@@ -2,10 +2,15 @@
 
 import argparse
 import os
+import random
+import string
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+
+def generate_prefix():
+    return ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(12))
 
 def create_watermark_pdf(watermark_text, watermark_pdf, pagesize=A4):
     """Creates a watermark PDF with repeated text."""
@@ -52,8 +57,9 @@ def save_images_as_pdf(image_list, output_pdf):
 
 def add_permanent_watermark(input_pdf, watermark_text):
     """Applies a non-removable watermark by converting PDF -> Image -> PDF."""
-    temp_watermark_pdf = "temp_watermark.pdf"
-    temp_watermarked_pdf = "temp_watermarked.pdf"
+    temp_pre = f"/tmp/{generate_prefix()}"
+    temp_watermark_pdf = f"{temp_pre}_watermark.pdf"
+    temp_watermarked_pdf = f"{temp_pre}_watermarked.pdf"
     final_output_pdf = os.path.splitext(input_pdf)[0] + "_watermarked.pdf"
 
     # Step 1: Create watermark PDF
@@ -74,11 +80,15 @@ def add_permanent_watermark(input_pdf, watermark_text):
 
     print(f"✅ Watermarked PDF saved as: {final_output_pdf}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Add a watermark to a PDF file.")
-    parser.add_argument("input_pdf", help="Path to the input PDF file")
-    parser.add_argument("watermark_text", help="Text to be used as the watermark")
+
+    parser.add_argument("-i", "--input", nargs="+", required=True, help="paths to the input PDF files")
+    parser.add_argument("-t", "--text", required=True, help="text to be used as the watermark")
 
     args = parser.parse_args()
-    add_permanent_watermark(args.input_pdf, args.watermark_text)
+
+    for pdf in args.input:
+        add_permanent_watermark(pdf, args.text)
 
