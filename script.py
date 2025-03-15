@@ -47,15 +47,15 @@ def apply_watermark(input_pdf, watermark_pdf, output_pdf):
     with open(output_pdf, "wb") as output_file:
         pdf_writer.write(output_file)
 
-def convert_pdf_to_images(pdf_path):
+def convert_pdf_to_images(pdf_path, dpi):
     """Converts a PDF to images for permanent watermarking."""
-    return convert_from_path(pdf_path)
+    return convert_from_path(pdf_path, dpi)
 
 def save_images_as_pdf(image_list, output_pdf):
     """Saves images as a new PDF, making the watermark permanent."""
     image_list[0].save(output_pdf, save_all=True, append_images=image_list[1:])
 
-def add_permanent_watermark(input_pdf, watermark_text):
+def add_permanent_watermark(input_pdf, watermark_text, dpi):
     """Applies a non-removable watermark by converting PDF -> Image -> PDF."""
     temp_pre = f"/tmp/{generate_prefix()}"
     temp_watermark_pdf = f"{temp_pre}_watermark.pdf"
@@ -69,7 +69,7 @@ def add_permanent_watermark(input_pdf, watermark_text):
     apply_watermark(input_pdf, temp_watermark_pdf, temp_watermarked_pdf)
 
     # Step 3: Convert watermarked PDF to images
-    images = convert_pdf_to_images(temp_watermarked_pdf)
+    images = convert_pdf_to_images(temp_watermarked_pdf, dpi)
 
     # Step 4: Convert images back to a final PDF (making watermark non-removable)
     save_images_as_pdf(images, final_output_pdf)
@@ -78,17 +78,18 @@ def add_permanent_watermark(input_pdf, watermark_text):
     os.remove(temp_watermark_pdf)
     os.remove(temp_watermarked_pdf)
 
-    print(f"✅ Watermarked PDF saved as: {final_output_pdf}")
-
+    file_size = os.path.getsize(final_output_pdf)  # Size in bytes
+    print(f"✅ Watermarked PDF saved as: {final_output_pdf} ({file_size / (10**6):.2f} MB)")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Add a watermark to a PDF file.")
 
     parser.add_argument("-i", "--input", nargs="+", required=True, help="paths to the input PDF files")
     parser.add_argument("-t", "--text", required=True, help="text to be used as the watermark")
+    parser.add_argument("-d", "--dpi", help="optionally specify the DPI of the intermediate image, defaults to 200")
 
     args = parser.parse_args()
 
     for pdf in args.input:
-        add_permanent_watermark(pdf, args.text)
+        add_permanent_watermark(pdf, args.text, args.dpi if args.dpi is not None else 200)
 
